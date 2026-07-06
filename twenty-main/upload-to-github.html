@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>上传项目到 GitHub</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0d1117; color: #c9d1d9; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+  .card { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 40px; width: 480px; box-shadow: 0 8px 30px rgba(0,0,0,0.4); }
+  h1 { font-size: 24px; margin-bottom: 8px; color: #58a6ff; }
+  .sub { color: #8b949e; margin-bottom: 30px; font-size: 14px; }
+  .step { background: #21262d; border-radius: 8px; padding: 16px; margin-bottom: 16px; border-left: 3px solid #58a6ff; }
+  .step-num { color: #58a6ff; font-weight: bold; margin-bottom: 6px; }
+  .step a { color: #58a6ff; }
+  .step a:hover { text-decoration: underline; }
+  .step code { background: #30363d; padding: 2px 8px; border-radius: 4px; font-size: 13px; }
+  input { width: 100%; padding: 12px; background: #0d1117; border: 1px solid #30363d; border-radius: 8px; color: #c9d1d9; font-size: 14px; margin-top: 12px; }
+  input:focus { border-color: #58a6ff; outline: none; }
+  button { width: 100%; padding: 14px; background: #238636; border: none; border-radius: 8px; color: white; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 16px; }
+  button:hover { background: #2ea043; }
+  .msg { margin-top: 16px; padding: 12px; border-radius: 8px; font-size: 13px; display: none; }
+  .msg.success { display: block; background: #0d3321; color: #3fb950; border: 1px solid #238636; }
+  .msg.error { display: block; background: #3d1a1a; color: #f85149; border: 1px solid #da3633; }
+  .divider { border-top: 1px solid #30363d; margin: 20px 0; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>&#128640; 上传到 GitHub</h1>
+  <p class="sub">6 个 commit 已就绪，填入仓库地址即可推送</p>
+
+  <div class="step">
+    <div class="step-num">&#9312; 创建仓库</div>
+    在 <a href="https://github.com/new" target="_blank">github.com/new</a> 创建一个空仓库（&#9888; 不要勾选 README / .gitignore / License）
+  </div>
+
+  <div class="step">
+    <div class="step-num">&#9313; 填入仓库地址</div>
+    <input type="text" id="repoUrl" placeholder="https://github.com/你的用户名/仓库名.git" />
+  </div>
+
+  <button onclick="pushToGithub()">&#128228; 推送到 GitHub</button>
+  <div id="msg" class="msg"></div>
+
+  <div class="divider"></div>
+  <p style="font-size:12px; color:#8b949e;">
+    &#128161; 提示：如果是第一次使用 git，可能需要在终端输入：<br/>
+    <code>git config --global user.name "你的名字"</code><br/>
+    <code>git config --global user.email "你的邮箱"</code>
+  </p>
+</div>
+
+<script>
+async function pushToGithub() {
+  const url = document.getElementById('repoUrl').value.trim();
+  const msg = document.getElementById('msg');
+  if (!url) { msg.className = 'msg error'; msg.textContent = '请输入仓库地址'; return; }
+  if (!url.includes('github.com')) { msg.className = 'msg error'; msg.textContent = '请输入有效的 GitHub 仓库地址'; return; }
+
+  msg.className = 'msg success';
+  msg.textContent = '正在推送...';
+
+  try {
+    const resp = await fetch('/api/push', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ repoUrl: url })
+    });
+    if (resp.ok) {
+      msg.textContent = '✅ 推送成功！访问 ' + url.replace('.git', '');
+    } else {
+      const err = await resp.text();
+      msg.className = 'msg error';
+      msg.textContent = '推送失败: ' + err;
+    }
+  } catch(e) {
+    msg.className = 'msg error';
+    msg.textContent = '网络错误，请在终端手动执行:\n\ncd C:\\Users\\26017\\Desktop\\crm\\twenty-main\ngit remote add origin ' + url + '\ngit branch -M main\ngit push -u origin main';
+  }
+}
+</script>
+</body>
+</html>
